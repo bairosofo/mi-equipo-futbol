@@ -290,8 +290,10 @@ def render_registro_jugador():
             
             st.success(f"¡Felicidades! {nombre} ha sido registrado con éxito.")
             time.sleep(1)
+            st.rerun()
         except Exception as e:
             st.error(f"Error al guardar datos: {e}")
+
 
 # ─────────────────────────────────────────
 #  MÓDULO: VER PLANTILLA
@@ -671,22 +673,23 @@ def render_panel_jugador(usuario, id_jugador):
         ss = load_spreadsheet()
         ws_jug = get_or_create_worksheet(ss, "jugadores", HEADERS_JUGADORES)
         jugadores = ws_jug.get_all_records()
-        mis_datos = next((j for j in jugadores if str(j["id"]) == str(id_jugador)), None)
+        mis_datos = next((j for j in jugadores if str(j.get("id")) == str(id_jugador)), None)
         
         ws_eva = get_or_create_worksheet(ss, "evaluaciones", HEADERS_EVALUACIONES)
         evaluaciones = ws_eva.get_all_records()
-        mis_evaluaciones = [e for e in evaluaciones if str(e["id_jugador"]) == str(id_jugador)]
+        mis_evaluaciones = [e for e in evaluaciones if str(e.get("id_jugador")) == str(id_jugador)]
         
         if mis_datos:
-            st.markdown(f"### ¡Bienvenido, **{mis_datos['nombre_completo']}**!")
+            st.markdown(f"### ¡Bienvenido, **{mis_datos.get('nombre_completo', 'Jugador')}**!")
             
             col1, col2 = st.columns(2)
             with col1:
-                st.write(f"**Posición de Campo:** {mis_datos['posicion']}")
-                st.write(f"**Edad:** {mis_datos['edad']} años (Validación +18)")
+                pos_jugador = mis_datos.get("posicion", mis_datos.get("posicion_principal", "No asignada"))
+                st.write(f"**Posición de Campo:** {pos_jugador}")
+                st.write(f"**Edad:** {mis_datos.get('edad', '—')} años (Validación +18)")
             with col2:
-                st.write(f"**Pierna Fuerte:** {mis_datos['pierna_dominante']}")
-                st.write(f"**Estatura/Peso:** {mis_datos['altura']} cm / {mis_datos['peso']} kg")
+                st.write(f"**Pierna Fuerte:** {mis_datos.get('pierna_dominante', 'No registrada')}")
+                st.write(f"**Estatura/Peso:** {mis_datos.get('altura', '—')} cm / {mis_datos.get('peso', '—')} kg")
         
             st.divider()
             
@@ -694,19 +697,19 @@ def render_panel_jugador(usuario, id_jugador):
                 ultima_eva = mis_evaluaciones[-1]
                 st.markdown("### 📊 Mi Estado de Rendimiento Oficial")
                 
-                color = color_irj(float(ultima_eva['irj']))
-                label = label_irj(float(ultima_eva['irj']))
+                irj_numerico = float(ultima_eva.get('irj', 50.0))
+                color = color_irj(irj_numerico)
+                label = label_irj(irj_numerico)
                 
                 st.markdown(f"""
                 <div style="text-align:center;padding:1rem;background:rgba(0,0,0,0.2);border-radius:10px;border:1px solid {color};margin-bottom:15px;">
-                    <div style="font-size:3rem; color:{color}; font-weight:bold;">{ultima_eva['irj']}</div>
+                    <div style="font-size:3rem; color:{color}; font-weight:bold;">{irj_numerico}</div>
                     <div style="color:{color}; font-size:1rem; font-weight:600; letter-spacing:0.1em;">{label}</div>
                     <div style="color:rgba(255,255,255,0.4); font-size:0.8rem;">IRJ Actualizado</div>
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # Deducción automática del enfoque según su score físico actual
-                score_f = float(ultima_eva['score_fisico'])
+                score_f = float(ultima_eva.get('score_fisico', 50.0))
                 if score_f < 60:
                     enfoque_estimado = "Potencia"
                 elif score_f < 75:
@@ -737,7 +740,7 @@ def render_panel_jugador(usuario, id_jugador):
                     st.table(df_gym.rename(columns={"ejercicio": "Ejercicio", "series": "Series x Repeticiones", "descanso": "Tiempos de Descanso"}))
                     
                     st.markdown("### ⚽ Biblioteca de Entrenamiento de Campo")
-                    perfil_campo = obtener_perfil_tactico(mis_datos['posicion'])
+                    perfil_campo = obtener_perfil_tactico(pos_jugador)
                     trabajos_campo = BI_CAMPO.get(perfil_campo, BI_CAMPO["Mediocampista"])
                     
                     for t in trabajos_campo:
@@ -752,6 +755,8 @@ def render_panel_jugador(usuario, id_jugador):
             st.error("No se encontraron tus datos personales en la tabla de jugadores.")
     except Exception as e:
         st.error(f"Error al cargar tu perfil: {e}")
+
+    
 
 # ─────────────────────────────────────────
 #  SISTEMA DE LOGUEO PRINCIPAL (PROTEGIDO)
