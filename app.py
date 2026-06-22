@@ -662,11 +662,13 @@ def render_perfil_jugador():
 # ─────────────────────────────────────────
 def render_panel_entrenador():
     render_header()
-    menu = st.sidebar.radio(
-        "Menú",
-        ["🏠 Inicio", "📋 Registrar Jugador", "👥 Ver Plantilla"],
-        label_visibility="collapsed"
+    
+    # 📱 MENÚ EN PANTALLA PRINCIPAL (Para celulares)
+    menu = st.selectbox(
+        "📂 SELECCIONAR SECCIÓN:",
+        ["🏠 Inicio", "📋 Registrar Jugador", "👥 Ver Plantilla"]
     )
+    st.markdown("<br>", unsafe_allow_html=True)
 
     if menu == "🏠 Inicio":
         st.markdown("### 🏠 Panel del Entrenador")
