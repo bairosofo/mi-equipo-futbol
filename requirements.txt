@@ -2,3 +2,5 @@ streamlit
 gspread
 google-auth
 pandas
+duckduckgo_search==6.1.7
+reportlab==4.1.0
