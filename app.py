@@ -63,7 +63,7 @@ def get_or_create_worksheet(spreadsheet, name, headers):
 # ─────────────────────────────────────────
 #  COMPONENTES VISUALES Y ESTILOS CSS
 # ─────────────────────────────────────────
-def def render_header():
+def render_header():
     st.markdown("""
     <style>
     .stat-card {
@@ -322,7 +322,7 @@ def render_evaluacion():
             potencia = st.number_input("Potencia estimada (W)", 500, 3500, 1500, 50)
 
         st.divider()
-        st.markdown("#### ⚽ Evaluación Técnica")
+        st.markdown("#### ⚽ Evaluación Técnico")
         st.caption("Escala del 1 (muy malo) al 10 (excelente)")
         ct1, ct2 = st.columns(2)
         with ct1:
@@ -336,10 +336,8 @@ def render_evaluacion():
         st.markdown("#### 💪 Evaluación Corporal")
         cc1, cc2, cc3 = st.columns(3)
         with cc1:
-            # Corregido enlace a llave correcta de base de datos
             peso_eval   = st.number_input("Peso actual (kg)", 40.0, 150.0, float(jug.get("peso", 70) or 70), 0.1, format="%.1f")
         with cc2:
-            # Corregido enlace a llave correcta de base de datos
             altura_eval = st.number_input("Altura actual (cm)", 140, 220, int(jug.get("altura", 175) or 175))
         with cc3:
             masa_musc   = st.number_input("Masa muscular estimada (%)", 20.0, 70.0, 45.0, 0.5)
@@ -545,7 +543,6 @@ def render_panel_entrenador():
 
             total = len(df_j)
             
-            # 🛡️ BLINDAJE DE SEGURIDAD: Evita caídas si la columna "estado" no existe en tu Sheets aún
             if not df_j.empty and "estado" in df_j.columns:
                 activos    = len(df_j[df_j["estado"] == "Activo"])
                 lesionados = len(df_j[df_j["estado"] == "Lesionado"])
