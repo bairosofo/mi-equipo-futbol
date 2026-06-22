@@ -563,9 +563,17 @@ def render_panel_entrenador():
     st.markdown("## 🏠 Panel de Control Principal")
     
     menu = st.selectbox(
-        "📂 SELECCIONAR SECCIÓN:",
-        ["🏠 Inicio Dashboard", "📋 Registrar Jugador", "👥 Ver Plantilla", "📊 Nueva Evaluación", "📈 Historial Clínico/Físico"]
-    )
+    "📁 SELECCIONAR SECCIÓN:",
+    [
+        "🏠 Inicio Dashboard", 
+        "📋 Registrar Jugador", 
+        "👥 Ver Plantilla",
+        "📊 Registrar Evaluación", 
+        "📈 Historial Evaluaciones", 
+        "🤖 Motor de Planificación"
+    ]
+)
+
     st.markdown("<br>", unsafe_allow_html=True)
 
     if menu == "🏠 Inicio Dashboard":
@@ -636,6 +644,8 @@ def render_panel_entrenador():
         
     elif menu == "📈 Historial Clínico/Físico":
         render_historial_evaluaciones()
+    elif menu == "🤖 Motor de Planificación":
+        render_motor_planificacion()
 
 
 # ─────────────────────────────────────────
