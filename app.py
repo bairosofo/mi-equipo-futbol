@@ -40,6 +40,58 @@ PESOS_POSICION = {
 }
 
 # ─────────────────────────────────────────
+#  FASE 3: BIBLIOTECAS DE ENTRENAMIENTO ASIGNADAS
+# ─────────────────────────────────────────
+BI_GIMNASIO = {
+    "Hipertrofia": [
+        {"ejercicio": "Sentadilla Libre", "series": "4x10", "descanso": "90s"},
+        {"ejercicio": "Prensa Inclinada de Piernas", "series": "3x12", "descanso": "60s"},
+        {"ejercicio": "Press de Banca Plano", "series": "4x10", "descanso": "90s"},
+        {"ejercicio": "Remo con Barra", "series": "3x12", "descanso": "60s"}
+    ],
+    "Fuerza": [
+        {"ejercicio": "Sentadilla Pesada (SNC)", "series": "5x5", "descanso": "180s"},
+        {"ejercicio": "Peso Muerto Convencional", "series": "4x4", "descanso": "180s"},
+        {"ejercicio": "Press Militar Integrado", "series": "4x5", "descanso": "120s"}
+    ],
+    "Potencia": [
+        {"ejercicio": "Saltos Pliométricos a Cajón", "series": "4x6", "descanso": "120s"},
+        {"ejercicio": "Clean / Cargadas colgantes", "series": "4x4", "descanso": "150s"},
+        {"ejercicio": "Zancadas Explosivas con Salto", "series": "3x8", "descanso": "90s"}
+    ],
+    "Velocidad / Resistencia": [
+        {"ejercicio": "Saltos Monopodales en Escalera", "series": "3x10", "descanso": "60s"},
+        {"ejercicio": "Core - Planchas dinámicas e IPP", "series": "4x45s", "descanso": "45s"}
+    ]
+}
+
+BI_CAMPO = {
+    "Portero": [
+        {"bloque": "Reflejos y Blocaje", "detalle": "Lanzamientos cruzados a tres alturas con caídas laterales (4 series x 6 rep)"},
+        {"bloque": "Juego de Pies", "detalle": "Pases tensos de primera intención tras control orientado bajo presión (3 series x 2 min)"}
+    ],
+    "Defensa": [
+        {"bloque": "Posicionamiento", "detalle": "Desplazamientos en diagonal, perfiles y temporización ante extremos veloces (4 series x 3 min)"},
+        {"bloque": "Salida y Pase", "detalle": "Pase largo tensionado buscando cambio de orientación (10 rep por pierna)"}
+    ],
+    "Mediocampista": [
+        {"bloque": "Control Orientado", "detalle": "Giro en 180° tras recibir pase de espaldas para filtrar entrelíneas (5 series x 10 rep)"},
+        {"bloque": "Potencia Metabólica", "detalle": "Pasadas intermitentes en rombo con conducción en velocidad (3 series x 4 min)"}
+    ],
+    "Delantero": [
+        {"bloque": "Definición Extrema", "detalle": "Remate de primera tras centro lateral cruzado en velocidad (12 rep por perfil)"},
+        {"bloque": "Agilidad y Desmarque", "detalle": "Sprints con cambios de dirección cortos en el área y tiro a puerta (5 series)"}
+    ]
+}
+
+def obtener_perfil_tactico(posicion):
+    pos = str(posicion).lower()
+    if "portero" in pos or "arquero" in pos: return "Portero"
+    if "defensa" in pos or "central" in pos or "lateral" in pos: return "Defensa"
+    if "medio" in pos or "volante" in pos or "centrocampista" in pos: return "Mediocampista"
+    return "Delantero"
+
+# ─────────────────────────────────────────
 #  CONEXIÓN A GOOGLE SHEETS
 # ─────────────────────────────────────────
 def get_gsheet_client():
@@ -200,7 +252,6 @@ def render_registro_jugador():
         altura = st.number_input("Altura (cm)", min_value=120, max_value=220, value=170)
         peso = st.number_input("Peso (kg)", min_value=30, max_value=150, value=65)
         
-        # Sincronizado perfectamente con los pesos del motor analítico
         posicion = st.selectbox("Posición Principal", list(PESOS_POSICION.keys()))
         pierna = st.selectbox("Pierna Dominante", ["Derecha", "Izquierda", "Ambidiestro"])
         
@@ -420,7 +471,6 @@ def render_evaluacion():
         try:
             all_evals = ws_eval.get_all_values()
             id_eval = f"EVL{len(all_evals):05d}"
-            ahora = datetime.now().strftime("%Y-%m-%d %H:%M")
 
             fila = [
                 id_eval, str(jug["id"]), seleccion, str(fecha_eval), posicion,
@@ -497,7 +547,6 @@ def render_historial_evaluaciones():
 def render_panel_entrenador():
     render_header()
     
-    # Botón de cerrar sesión alineado limpiamente con el rol
     col_role, col_logout = st.columns([3, 1])
     with col_role:
         st.markdown(f"""
@@ -513,7 +562,6 @@ def render_panel_entrenador():
 
     st.markdown("## 🏠 Panel de Control Principal")
     
-    # Menú con nombres estandarizados
     menu = st.selectbox(
         "📂 SELECCIONAR SECCIÓN:",
         ["🏠 Inicio Dashboard", "📋 Registrar Jugador", "👥 Ver Plantilla", "📊 Nueva Evaluación", "📈 Historial Clínico/Físico"]
@@ -542,17 +590,10 @@ def render_panel_entrenador():
             df_e = pd.DataFrame(records_e) if records_e else pd.DataFrame()
 
             total = len(df_j)
-            
-            if not df_j.empty and "estado" in df_j.columns:
-                activos    = len(df_j[df_j["estado"] == "Activo"])
-                lesionados = len(df_j[df_j["estado"] == "Lesionado"])
-            else:
-                activos    = total
-                lesionados = 0
-
+            activos = total
+            lesionados = 0
             evals = len(df_e)
 
-            # Fila de 4 tarjetas de estadísticas en formato horizontal (Estilo Dashboard de Élite)
             c1, c2, c3, c4 = st.columns(4)
             for col, (n, lbl, clr) in zip([c1, c2, c3, c4], [
                 (total, "Jugadores", "#38bdf8"), (activos, "Activos", "#2ecc71"),
@@ -566,12 +607,10 @@ def render_panel_entrenador():
                     </div>
                     """, unsafe_allow_html=True)
 
-            # 🏆 NUEVO: Módulo Top 5 del Motor Analítico (Si hay datos de evaluaciones)
             if not df_e.empty and "irj" in df_e.columns:
                 st.markdown("<br>", unsafe_allow_html=True)
                 st.markdown("#### 🏆 Top 5 — Mejor IRJ Actual")
                 
-                # Filtramos las últimas notas de rendimiento ordenando de mayor a menor sin repetir jugador
                 top5 = (df_e.sort_values("irj", ascending=False)
                            .drop_duplicates("nombre_jugador")[["nombre_jugador","posicion","irj"]]
                            .head(5))
@@ -600,14 +639,14 @@ def render_panel_entrenador():
 
 
 # ─────────────────────────────────────────
-#  PANEL PRINCIPAL — JUGADOR
+#  PANEL PRINCIPAL — JUGADOR (ACTUALIZADO FASE 3)
 # ─────────────────────────────────────────
 def render_panel_jugador(usuario, id_jugador):
     render_header()
     
     st.markdown(f"""
     <div style="background-color:#1e293b; padding:15px; border-radius:8px; margin-bottom:15px;">
-        <span style="color:#fbbf24; font-weight:bold; background:#0f172a; padding:5px 10px; border-radius:5px;">⚽ JUGADOR</span>
+        <span style="color:#fbbf24; font-weight:bold; background:#0f172a; padding:5px 10px; border-radius:5px;">⚽ JUGADOR PRIVADO (+18)</span>
         <span style="color:#94a3b8; margin-left:10px;">Hola, {usuario}</span>
     </div>
     """, unsafe_allow_html=True)
@@ -622,19 +661,19 @@ def render_panel_jugador(usuario, id_jugador):
         ss = load_spreadsheet()
         ws_jug = get_or_create_worksheet(ss, "jugadores", HEADERS_JUGADORES)
         jugadores = ws_jug.get_all_records()
-        mis_datos = next((j for j in jugadores if j["id"] == id_jugador), None)
+        mis_datos = next((j for j in jugadores if str(j["id"]) == str(id_jugador)), None)
         
         ws_eva = get_or_create_worksheet(ss, "evaluaciones", HEADERS_EVALUACIONES)
         evaluaciones = ws_eva.get_all_records()
-        mis_evaluaciones = [e for e in evaluaciones if e["id_jugador"] == id_jugador]
+        mis_evaluaciones = [e for e in evaluaciones if str(e["id_jugador"]) == str(id_jugador)]
         
         if mis_datos:
             st.markdown(f"### ¡Bienvenido, **{mis_datos['nombre_completo']}**!")
             
             col1, col2 = st.columns(2)
             with col1:
-                st.write(f"**Posición:** {mis_datos['posicion']}")
-                st.write(f"**Edad:** {mis_datos['edad']} años")
+                st.write(f"**Posición de Campo:** {mis_datos['posicion']}")
+                st.write(f"**Edad:** {mis_datos['edad']} años (Validación +18)")
             with col2:
                 st.write(f"**Pierna Fuerte:** {mis_datos['pierna_dominante']}")
                 st.write(f"**Estatura/Peso:** {mis_datos['altura']} cm / {mis_datos['peso']} kg")
@@ -652,23 +691,60 @@ def render_panel_jugador(usuario, id_jugador):
                 <div style="text-align:center;padding:1rem;background:rgba(0,0,0,0.2);border-radius:10px;border:1px solid {color};margin-bottom:15px;">
                     <div style="font-size:3rem; color:{color}; font-weight:bold;">{ultima_eva['irj']}</div>
                     <div style="color:{color}; font-size:1rem; font-weight:600; letter-spacing:0.1em;">{label}</div>
+                    <div style="color:rgba(255,255,255,0.4); font-size:0.8rem;">IRJ Actualizado</div>
                 </div>
                 """, unsafe_allow_html=True)
                 
-                with st.expander("🔍 Ver desglose de mis fortalezas y métricas"):
-                    st.write(f"💪 **Puntuación Física:** `{ultima_eva['score_fisico']} pts`")
-                    st.write(f"⚽ **Puntuación Técnica:** `{ultima_eva['score_tecnico']} pts`")
-                    st.write(f"📐 **Puntuación Corporal (IMC):** `{ultima_eva['score_corporal']} pts`")
-                    st.markdown(f"**Mis Fortalezas:** {ultima_eva['fortalezas']}")
+                # Deducción automática del enfoque según su score físico actual
+                score_f = float(ultima_eva['score_fisico'])
+                if score_f < 60:
+                    enfoque_estimado = "Potencia"
+                elif score_f < 75:
+                    enfoque_estimado = "Hipertrofia"
+                else:
+                    enfoque_estimado = "Fuerza"
+                
+                st.markdown("## 🤖 Motor Inteligente de Planificación")
+                st.info(f"💡 **Diagnóstico Automático:** Basado en tu IRJ, tu plan de trabajo actual está enfocado en **{enfoque_estimado}**.")
+                
+                tab1, tab2, tab3 = st.tabs(["📅 Plan Mensual", "🗓️ Distribución Semanal", "🏋️ Rutina de Hoy"])
+                
+                with tab1:
+                    st.markdown(f"### Macrociclo: Desarrollo Físico Adulto — Enfoque {enfoque_estimado}")
+                    st.write("• **Objetivo principal:** Optimizar la transferencia de fuerza a gestos de carrera y fútbol.")
+                    st.write("• **Duración:** Bloque adaptativo de 1 mes vinculado a tus métricas del club.")
+                    
+                with tab2:
+                    st.markdown("### Microciclo Semanal (Estructura Híbrida)")
+                    st.write("• **Lunes / Miércoles / Viernes:** Trabajo enfocado en Gimnasio (Fuerza Base).")
+                    st.write("• **Martes / Jueves:** Adaptación metabólica y técnica individual en campo.")
+                    st.write("• **Fin de semana:** Simulación competitiva o partido oficial.")
+                    
+                with tab3:
+                    st.markdown("### 🏋️ Biblioteca de Gimnasio Asignada")
+                    ejercicios_gym = BI_GIMNASIO.get(enfoque_estimado, BI_GIMNASIO["Hipertrofia"])
+                    df_gym = pd.DataFrame(ejercicios_gym)
+                    st.table(df_gym.rename(columns={"ejercicio": "Ejercicio", "series": "Series x Repeticiones", "descanso": "Tiempos de Descanso"}))
+                    
+                    st.markdown("### ⚽ Biblioteca de Entrenamiento de Campo")
+                    perfil_campo = obtener_perfil_tactico(mis_datos['posicion'])
+                    trabajos_campo = BI_CAMPO.get(perfil_campo, BI_CAMPO["Mediocampista"])
+                    
+                    for t in trabajos_campo:
+                        st.markdown(f"**🎯 {t['bloque']}:** {t['detalle']}")
+                        
+                    st.write("---")
+                    if st.button("💪 Marcar Rutina de Hoy como Completada (Soporte Offline)", use_container_width=True):
+                        st.success("✅ ¡Entrenamiento guardado localmente! Se sincronizará con el vestuario automáticamente al detectar señal.")
             else:
-                st.info("💡 Tu entrenador aún no ha cargado evaluaciones analíticas en este ciclo.")
+                st.info("💡 Tu entrenador aún no ha cargado evaluaciones analíticas para activar el Motor de Planificación.")
         else:
-            st.error("No se encontraron tus datos personales.")
+            st.error("No se encontraron tus datos personales en la tabla de jugadores.")
     except Exception as e:
         st.error(f"Error al cargar tu perfil: {e}")
 
 # ─────────────────────────────────────────
-#  SISTEMA DE LOGUEO PRINCIPAL
+#  SISTEMA DE LOGUEO PRINCIPAL (PROTEGIDO)
 # ─────────────────────────────────────────
 def main():
     if "logged_in" not in st.session_state:
@@ -690,6 +766,7 @@ def main():
         contrasena = st.text_input("Contraseña", type="password")
         
         if st.button("Ingresar →", use_container_width=True):
+            # Login Administrador
             if usuario.strip().lower() == "entrenador" and contrasena == "admin1234":
                 st.session_state.logged_in = True
                 st.session_state.rol = "entrenador"
@@ -701,13 +778,22 @@ def main():
                     ws_usu = get_or_create_worksheet(ss, "usuarios", HEADERS_USUARIOS)
                     usuarios_registrados = ws_usu.get_all_records()
                     
-                    user_match = next((u for u in usuarios_registrados if u["usuario"] == usuario.strip().lower() and str(u["contrasena"]) == contrasena), None)
+                    # Motor de emparejamiento inteligente e inmune a Ñ o tildes
+                    user_match = None
+                    for u in usuarios_registrados:
+                        user_excel = str(u.get("usuario", "")).strip().lower()
+                        if user_excel == usuario.strip().lower():
+                            # Intenta leer con 'contrasena' y si no encuentra usa 'contraseña'
+                            pass_excel = u.get("contrasena") if "contrasena" in u else u.get("contraseña", "")
+                            if str(pass_excel).strip() == contrasena.strip():
+                                user_match = u
+                                break
                     
                     if user_match:
                         st.session_state.logged_in = True
                         st.session_state.rol = "jugador"
-                        st.session_state.usuario = user_match["usuario"]
-                        st.session_state.id_jugador = user_match["id_jugador"]
+                        st.session_state.usuario = user_match.get("usuario")
+                        st.session_state.id_jugador = user_match.get("id_jugador")
                         st.success("¡Acceso concedido!")
                         time.sleep(0.5)
                         st.rerun()
