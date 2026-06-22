@@ -6,7 +6,7 @@ import pandas as pd
 import time
 
 # Configuración de la página
-st.set_page_config(page_title="Los Troncos - Panel de Control", page_icon="⚽", layout="centered")
+st.set_page_config(page_title="Mi Equipo - Panel de Control", page_icon="⚽", layout="centered")
 
 # ─────────────────────────────────────────
 #  CABECERAS DE GOOGLE SHEETS
@@ -63,7 +63,7 @@ def get_or_create_worksheet(spreadsheet, name, headers):
 # ─────────────────────────────────────────
 #  COMPONENTES VISUALES Y ESTILOS CSS
 # ─────────────────────────────────────────
-def render_header():
+def def render_header():
     st.markdown("""
     <style>
     .stat-card {
@@ -86,10 +86,11 @@ def render_header():
     }
     </style>
     <div style="background-color:#0f2027; padding:20px; border-radius:10px; margin-bottom:20px; border-left: 5px solid #203a43;">
-        <h1 style="color:white; margin:0; font-size:28px;">⚽ LOS TRONCOS FC</h1>
+        <h1 style="color:white; margin:0; font-size:28px;">⚽ MI EQUIPO</h1>
         <p style="color:#81a1c1; margin:5px 0 0 0;">Sistema Privado de Gestión Deportiva</p>
     </div>
     """, unsafe_allow_html=True)
+
 
 # ─────────────────────────────────────────
 #  LÓGICA DEL MOTOR ANALÍTICO
