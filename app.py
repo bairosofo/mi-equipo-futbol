@@ -4,6 +4,9 @@ from google.oauth2.service_account import Credentials
 from datetime import datetime, date
 import pandas as pd
 import time
+import json
+import re
+from duckduckgo_search import DDGS
 
 # Configuración de la página
 st.set_page_config(page_title="Mi Equipo - Panel de Control", page_icon="⚽", layout="centered")
@@ -544,7 +547,7 @@ def render_historial_evaluaciones():
         )
 
 # ─────────────────────────────────────────
-#  PANEL PRINCIPAL — ENTRENADOR
+#  PANEL PRINCIPAL — ENTRENADOR (CORREGIDO)
 # ─────────────────────────────────────────
 def render_panel_entrenador():
     render_header()
@@ -565,16 +568,16 @@ def render_panel_entrenador():
     st.markdown("## 🏠 Panel de Control Principal")
     
     menu = st.selectbox(
-    "📁 SELECCIONAR SECCIÓN:",
-    [
-        "🏠 Inicio Dashboard", 
-        "📋 Registrar Jugador", 
-        "👥 Ver Plantilla",
-        "📊 Registrar Evaluación", 
-        "📈 Historial Evaluaciones", 
-        "🤖 Motor de Planificación"
-    ]
-)
+        "📁 SELECCIONAR SECCIÓN:",
+        [
+            "🏠 Inicio Dashboard", 
+            "📋 Registrar Jugador", 
+            "👥 Ver Plantilla",
+            "📊 Registrar Evaluación", 
+            "📈 Historial Evaluaciones", 
+            "🤖 Motor de Planificación"
+        ]
+    )
 
     st.markdown("<br>", unsafe_allow_html=True)
 
@@ -641,17 +644,18 @@ def render_panel_entrenador():
     elif menu == "👥 Ver Plantilla":
         render_plantilla()
         
-    elif menu == "📊 Nueva Evaluación":
+    elif menu == "📊 Registrar Evaluación":
         render_evaluacion()
         
-    elif menu == "📈 Historial Clínico/Físico":
+    elif menu == "📈 Historial Evaluaciones":
         render_historial_evaluaciones()
+        
     elif menu == "🤖 Motor de Planificación":
         render_motor_planificacion()
 
 
 # ─────────────────────────────────────────
-#  PANEL PRINCIPAL — JUGADOR (ACTUALIZADO FASE 3)
+#  PANEL PRINCIPAL — JUGADOR
 # ─────────────────────────────────────────
 def render_panel_jugador(usuario, id_jugador):
     render_header()
@@ -756,8 +760,6 @@ def render_panel_jugador(usuario, id_jugador):
     except Exception as e:
         st.error(f"Error al cargar tu perfil: {e}")
 
-    
-
 # ─────────────────────────────────────────
 #  SISTEMA DE LOGUEO PRINCIPAL (PROTEGIDO)
 # ─────────────────────────────────────────
@@ -777,11 +779,12 @@ def main():
         render_header()
         st.markdown("### 🔒 Iniciar Sesión")
         
-        usuario = st.text_input("Usuario", placeholder="ej: entrenador o tu usuario de jugador")
-        contrasena = st.text_input("Contraseña", type="password")
+        with st.form("login_form"):
+            usuario = st.text_input("Usuario", placeholder="ej: entrenador o tu usuario de jugador")
+            contrasena = st.text_input("Contraseña", type="password")
+            login_btn = st.form_submit_button("Ingresar →", use_container_width=True)
         
-        if st.button("Ingresar →", use_container_width=True):
-            # Login Administrador
+        if login_btn:
             if usuario.strip().lower() == "entrenador" and contrasena == "admin1234":
                 st.session_state.logged_in = True
                 st.session_state.rol = "entrenador"
@@ -793,12 +796,10 @@ def main():
                     ws_usu = get_or_create_worksheet(ss, "usuarios", HEADERS_USUARIOS)
                     usuarios_registrados = ws_usu.get_all_records()
                     
-                    # Motor de emparejamiento inteligente e inmune a Ñ o tildes
                     user_match = None
                     for u in usuarios_registrados:
                         user_excel = str(u.get("usuario", "")).strip().lower()
                         if user_excel == usuario.strip().lower():
-                            # Intenta leer con 'contrasena' y si no encuentra usa 'contraseña'
                             pass_excel = u.get("contrasena") if "contrasena" in u else u.get("contraseña", "")
                             if str(pass_excel).strip() == contrasena.strip():
                                 user_match = u
@@ -816,13 +817,10 @@ def main():
                         st.error("Usuario o contraseña incorrectos.")
                 except Exception as e:
                     st.error(f"Error en el sistema de login: {e}")
-# ─────────────────────────────────────────
-#  FASE 4 — MOTOR INTELIGENTE DE PLANIFICACIÓN (IA GRATUITA)
-# ─────────────────────────────────────────
-import json
-import re
-from duckduckgo_search import DDGS
 
+# ─────────────────────────────────────────
+#  FASE 4 — MOTOR INTELIGENTE DE PLANIFICACIÓN
+# ─────────────────────────────────────────
 HEADERS_PLANES = [
     "id_plan", "id_jugador", "nombre_jugador", "fecha_generacion",
     "objetivo", "dias_semana", "duracion_semanas",
@@ -917,25 +915,19 @@ Genera exactamente {jugador_data['dias']} días de entrenamiento en plan_diario.
 """
 
 def llamar_ia_gratuita(prompt: str) -> dict | None:
-    """Llama a la IA de DuckDuckGo de forma gratuita e ilimitada."""
     try:
         with DDGS() as ddgs:
-            # Usamos el modelo meta-llama-3 por su excelente rendimiento estructurando JSON
             respuesta = ddgs.chat(prompt, model="llama-3-70b")
             texto = respuesta.strip()
-            
-            # Limpieza exhaustiva de la respuesta por si la IA agrega marcas markdown
             texto = re.sub(r"^```json\s*", "", texto)
             texto = re.sub(r"^```\s*", "", texto)
             texto = re.sub(r"\s*```$", "", texto)
-            
             return json.loads(texto)
     except Exception as ex:
         st.error(f"Error al conectar con el motor de IA gratuito: {ex}")
         return None
 
 def generar_pdf_plan(jugador_data: dict, plan: dict) -> bytes:
-    """Genera un PDF del plan usando reportlab."""
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.units import cm
@@ -991,7 +983,6 @@ def generar_pdf_plan(jugador_data: dict, plan: dict) -> bytes:
     story.append(Paragraph("ESTRATEGIA RECOMENDADA POR LA IA", s_h2))
     story.append(Paragraph(plan.get("resumen", ""), s_body))
 
-    # Plan Mensual
     story.append(Paragraph("PLAN MENSUAL (MACROCICLO)", s_h2))
     pm = plan.get("plan_mensual", {})
     story.append(Paragraph(f"<b>Objetivo del bloque:</b> {pm.get('objetivo_mes','')}", s_body))
@@ -1006,7 +997,6 @@ def generar_pdf_plan(jugador_data: dict, plan: dict) -> bytes:
     ]))
     story.append(t_sem)
 
-    # Plan Diario
     story.append(Paragraph("PLAN DIARIO DETALLADO", s_h2))
     for sesion in plan.get("plan_diario", []):
         story.append(Paragraph(f"📅 {sesion.get('dia','')}", s_h3))
@@ -1052,7 +1042,6 @@ def render_motor_planificacion():
     if sel == "— Elige —":
         return
 
-    # Usamos .get() seguro para evitar errores si la columna en el excel cambia de nombre
     jug = df_jug[df_jug["nombre_completo"] == sel].iloc[0]
 
     eval_data = {}
@@ -1104,13 +1093,11 @@ def render_motor_planificacion():
         st.markdown("### 📋 Plan de Trabajo Asignado")
         st.info(plan.get("resumen", ""))
 
-        # Mostrar Plan Mensual
         st.markdown("#### 📅 Cronograma Mensual")
         pm = plan.get("plan_mensual", {})
         sem_rows = [{"Semana": f"Semana {s.get('semana')}", "Foco": s.get("foco"), "Carga": s.get("carga"), "Volumen": f"{s.get('volumen_minutos')} min"} for s in pm.get("semanas", [])]
         st.dataframe(pd.DataFrame(sem_rows), use_container_width=True, hide_index=True)
 
-        # Mostrar bloques diarios
         st.markdown("#### 🏋️ Desglose de Sesiones Diarias")
         for sesion in plan.get("plan_diario", []):
             with st.expander(f"📆 Entrenamiento del {sesion.get('dia')}"):
@@ -1119,9 +1106,7 @@ def render_motor_planificacion():
                     ej_rows = [{"Ejercicio": e.get("nombre"), "Instrucciones": e.get("descripcion"), "Series": e.get("series"), "Reps": e.get("repeticiones"), "Descanso": e.get("descanso")} for e in b.get("ejercicios", [])]
                     st.dataframe(pd.DataFrame(ej_rows), use_container_width=True, hide_index=True)
 
-        # Guardar en Sheets de forma automática
         try:
-            # Capturamos el id de forma segura usando get() o la longitud de la tabla
             id_jugador_clean = jug.get("id") if "id" in jug else jug.get("id_jugador", "JUG001")
             fila_plan = [
                 f"PLN{len(ws_plan.get_all_values()):03d}", str(id_jugador_clean), sel,
@@ -1134,7 +1119,6 @@ def render_motor_planificacion():
         except Exception as ex:
             st.warning(f"Sincronización Sheets pendiente: {ex}")
 
-        # Descarga de PDF
         try:
             pdf_bytes = generar_pdf_plan(jugador_data, plan)
             st.download_button(label="⬇️ Descargar Ficha de Entrenamiento (PDF)", data=pdf_bytes, file_name=f"Plan_{sel}.pdf", mime="application/pdf", use_container_width=True)
