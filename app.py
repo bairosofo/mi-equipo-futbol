@@ -19,24 +19,34 @@ if not st.session_state['autenticado']:
     clave_input = st.text_input("Contraseña", type="password")
     
     if st.button("Ingresar"):
-        try:
-            df_usuarios = utils.get_data_from_sheet("usuarios")
-            usuario_row = df_usuarios[df_usuarios['usuario'] == usuario_input]
-            
-            if not usuario_row.empty:
-                hash_guardado = usuario_row.iloc[0]['contrasena']
-                if utils.check_password(clave_input, str(hash_guardado)):
-                    st.session_state['autenticado'] = True
-                    st.session_state['usuario'] = usuario_input
-                    st.session_state['rol'] = usuario_row.iloc[0]['rol']
-                    st.success(f"Bienvenido {usuario_input}")
-                    st.rerun()
+        # --- ATAJO DIRECTO DE EMERGENCIA ---
+        if usuario_input == "admin" and clave_input == "1234":
+            st.session_state['autenticado'] = True
+            st.session_state['usuario'] = "admin"
+            st.session_state['rol'] = "Admin"
+            st.success("¡Entrando como Administrador de emergencia!")
+            st.rerun()
+        else:
+            # Si no usas el atajo, intenta buscar en el Excel por si acaso
+            try:
+                df_usuarios = utils.get_data_from_sheet("usuarios")
+                usuario_row = df_usuarios[df_usuarios['usuario'] == usuario_input]
+                
+                if not usuario_row.empty:
+                    hash_guardado = usuario_row.iloc[0]['contrasena']
+                    if utils.check_password(clave_input, str(hash_guardado)):
+                        st.session_state['autenticado'] = True
+                        st.session_state['usuario'] = usuario_input
+                        st.session_state['rol'] = usuario_row.iloc[0]['rol']
+                        st.success(f"Bienvenido {usuario_input}")
+                        st.rerun()
+                    else:
+                        st.error("Contraseña incorrecta")
                 else:
-                    st.error("Contraseña incorrecta")
-            else:
-                st.error("El usuario no existe")
-        except Exception as e:
-            st.error("Error de conexión. Verifica tus credenciales en los Secrets.")
+                    st.error("El usuario no existe")
+            except Exception as e:
+                st.error("Error de conexión o credenciales no válidas.")
+
 else:
     # --- MENÚ PRINCIPAL SEGÚN EL ROL (Tu diseño original) ---
     st.sidebar.title(f"Menu ({st.session_state['rol']})")
