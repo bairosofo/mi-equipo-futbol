@@ -1,38 +1,83 @@
 # aplicacion.py
 import streamlit as st
-import config  # Importamos la despensa
-import utils   # Importamos las funciones de lógica y datos
+from streamlit_option_menu import option_menu
+import config
+import utils
 
-# Configuración básica de la página
-st.set_page_config(page_title="Gestión de Equipo", layout="wide")
-
-# Aplicamos los estilos visuales que guardamos en config.py
+st.set_page_config(page_title="Los Troncos FC - Gestión", layout="wide")
 st.markdown(config.CSS_ESTILOS, unsafe_allow_html=True)
 
-st.title("⚽ Panel de Control - Mi Equipo")
+# --- SISTEMA DE SESIÓN (LOGIN) ---
+if 'autenticado' not in st.session_state:
+    st.session_state['autenticado'] = False
+    st.session_state['usuario'] = None
+    st.session_state['rol'] = None
 
-# Creamos dos pestañas en la aplicación
-tab1, tab2 = st.tabs(["📋 Plantilla", "🔐 Prueba de Seguridad"])
-
-with tab1:
-    st.header("Lista de Jugadores Registrados")
+if not st.session_state['autenticado']:
+    st.title("⚽ Los Troncos FC - Iniciar Sesión")
+    usuario_input = st.text_input("Usuario")
+    clave_input = st.text_input("Contraseña", type="password")
     
-    if st.button("🔄 Cargar / Actualizar Datos"):
+    if st.button("Ingresar"):
         try:
-            # Llamamos a la función de utils.py para traer la pestaña 'jugadores' de tu Google Sheet
-            df_jugadores = utils.get_data_from_sheet("jugadores")
-            st.dataframe(df_jugadores, use_container_width=True)
+            df_usuarios = utils.get_data_from_sheet("usuarios")
+            usuario_row = df_usuarios[df_usuarios['usuario'] == usuario_input]
+            
+            if not usuario_row.empty:
+                hash_guardado = usuario_row.iloc[0]['contrasena']
+                if utils.check_password(clave_input, str(hash_guardado)):
+                    st.session_state['autenticado'] = True
+                    st.session_state['usuario'] = usuario_input
+                    st.session_state['rol'] = usuario_row.iloc[0]['rol']
+                    st.success(f"Bienvenido {usuario_input}")
+                    st.rerun()
+                else:
+                    st.error("Contraseña incorrecta")
+            else:
+                st.error("El usuario no existe")
         except Exception as e:
-            st.error("Falta configurar las credenciales de Google Sheets en Streamlit Cloud.")
-
-with tab2:
-    st.header("Demostración de Encriptación de Contraseñas")
+            st.error("Error de conexión. Verifica tus credenciales en los Secrets.")
+else:
+    # --- MENÚ PRINCIPAL SEGÚN EL ROL (Tu diseño original) ---
+    st.sidebar.title(f"Menu ({st.session_state['rol']})")
     
-    clave_usuario = st.text_input("Escribe una contraseña de prueba:", type="password")
-    
-    if clave_usuario:
-        # Usamos las funciones de seguridad de utils.py
-        clave_encriptada = utils.hash_password(clave_usuario)
+    opciones_menu = ["Inicio", "Plantilla", "Asistencia", "Rendimiento", "Planes IA"]
+    if st.session_state['rol'] == 'Admin':
+        opciones_menu.append("Configuración")
         
-        st.info(f"**Así se enviará a Google Sheets (Encriptada):** {clave_encriptada}")
-        st.write("Aunque alguien robe tu cuenta de Google Sheets, jamás sabrá cuál era la clave original.")
+    seleccion = option_menu(
+        menu_title="Los Troncos FC",
+        options=opciones_menu,
+        icons=["house", "people", "calendar-check", "activity", "robot", "gear"],
+        menu_icon="cast",
+        default_index=0,
+        orientation="horizontal"
+    )
+    
+    # --- RENDER DE PÁGINAS ---
+    if seleccion == "Inicio":
+        st.subheader(f"Bienvenido al panel de control de Los Troncos, {st.session_state['usuario']}.")
+        
+    elif seleccion == "Plantilla":
+        st.header("📋 Gestión de Plantilla")
+        df_jugadores = utils.get_data_from_sheet("jugadores")
+        st.dataframe(df_jugadores, use_container_width=True)
+        
+    elif seleccion == "Asistencia":
+        st.header("📅 Control de Asistencia")
+        df_asistencia = utils.get_data_from_sheet("asistencia")
+        st.dataframe(df_asistencia, use_container_width=True)
+        
+    elif seleccion == "Rendimiento":
+        st.header("📊 Estadísticas e IRJ")
+        df_rendimiento = utils.get_data_from_sheet("rendimiento")
+        st.dataframe(df_rendimiento, use_container_width=True)
+
+    elif seleccion == "Planes IA":
+        st.header("🤖 Inteligencia Artificial")
+        # Aquí puedes llamar a tu generador usando: utils.generar_plan_entrenamiento_ia(...)
+        st.info("Espacio para la generación de entrenamientos inteligentes.")
+
+    if st.sidebar.button("Cerrar Sesión"):
+        st.session_state['autenticado'] = False
+        st.rerun()
