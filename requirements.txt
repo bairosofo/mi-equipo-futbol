@@ -1,5 +1,8 @@
 streamlit
+streamlit-option-menu
 gspread
 google-auth
 pandas
 bcrypt
+requests
+
