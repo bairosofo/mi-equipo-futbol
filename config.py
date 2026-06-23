@@ -1,10 +1,11 @@
 # config.py
 
-# Estilos CSS que ya tenías configurados para tus tarjetas y diseño
+# Estilos CSS de Los Troncos FC para un diseño oscuro y profesional
 CSS_ESTILOS = """
 <style>
-    .main { background-color: #0e1117; }
-    .stButton>button { width: 100%; background-color: #4CAF50; color: white; }
+    .main { background-color: #0e1117; color: #ffffff; }
+    .stButton>button { width: 100%; background-color: #2e7d32; color: white; border-radius: 5px; }
+    .stButton>button:hover { background-color: #1b5e20; }
     .stat-card {
         background-color: #1e293b;
         padding: 20px;
@@ -16,13 +17,19 @@ CSS_ESTILOS = """
 </style>
 """
 
-# Configuración de pesos para tus fórmulas matemáticas
-PESO_ASISTENCIA = 0.4
-PESO_IRJ = 0.6
+# Configuración matemática para el algoritmo del IRJ (Índice de Rendimiento del Jugador)
+PESO_FISICO = 0.4
+PESO_TECNICO = 0.4
+PESO_MENTAL = 0.2
 
-# Encabezados exactos de tus pestañas de Google Sheets
+# Nombres exactos de las columnas en tus hojas de Google Sheets
 HEADERS_JUGADORES = ["id", "nombre_completo", "edad", "fecha_nacimiento", "altura", "peso", "posicion", "pierna_dominante", "fecha_registro"]
 HEADERS_USUARIOS = ["usuario", "contrasena", "rol", "id_jugador"]
-HEADERS_ASISTENCIA = ["id_asistencia", "fecha", "tipo_evento", "id_jugador", "estado", "observaciones"]
-HEADERS_PARTIDOS = ["id_partido", "fecha", "rival", "resultado_nosotros", "resultado_rival", "tipo_partido", "observaciones"]
-HEADERS_RENDIMIENTO = ["id_rendimiento", "id_partido", "id_jugador", "minutos_jugados", "goles", "asistencias", "tarjeta_amarilla", "tarjeta_roja", "calificacion_dt"]
+HEADERS_EVALUACIONES = [
+    "id_eval", "id_jugador", "nombre_jugador", "fecha_evaluacion", "posicion",
+    "vel_10m", "vel_30m", "agilidad", "resistencia", "salto_vertical", "potencia",
+    "precision_pase", "control_orientado", "conduccion", "definicion",
+    "peso_eval", "altura_eval", "masa_muscular", "imc",
+    "score_fisico", "score_tecnico", "score_mental", "irj", "proyeccion", "potencial_estrellas"
+]
+HEADERS_WELLNESS = ["fecha", "id_jugador", "sueno", "dolor_muscular", "energia"]
